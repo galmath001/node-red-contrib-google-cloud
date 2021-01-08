@@ -115,6 +115,11 @@ module.exports = function(RED) {
                                 node.error(`msg.payload.query has invalid member: ${JSON.stringify(element)}`);
                                 return; 
                             }
+                            // Firestore uses "val instanceof Array" which can fail if "Array.prototype" is no longer on the object's [[Prototype]] chain
+                            // once the "msg" is being processed here. Creating a fresh Array allows "val instanceof Array" to return true as expected. 
+                            if (Array.isArray(element.value)) {
+                                element.value = Array.from(element.value);
+                            }
                             query = query.where(element.fieldPath, element.opStr, element.value);
                         });
                     } else {
@@ -125,6 +130,11 @@ module.exports = function(RED) {
                             !msg.payload.query.hasOwnProperty('value')) {
                             node.error(`msg.payload.query is bad object: ${JSON.stringify(msg.payload.query)}`);
                             return; 
+                        }
+                        // Firestore uses "val instanceof Array" which can fail if "Array.prototype" is no longer on the object's [[Prototype]] chain
+                        // once the "msg" is being processed here. Creating a fresh Array allows "val instanceof Array" to return true as expected.
+                        if (Array.isArray(element.value)) {
+                            msg.payload.query.value = Array.from(msg.payload.query.value);
                         }
                         query = query.where(msg.payload.query.fieldPath, msg.payload.query.opStr, msg.payload.query.value);
                     }
